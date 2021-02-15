@@ -1,6 +1,6 @@
 import os
 
-Buff = 0
+Buff = None
 
 def readChar():
     global Buff
@@ -11,9 +11,11 @@ def readChar():
 
 def readLine():
     global Buff
-    Buff = readChar()
     string = ""
     i = 0
+    
+    if Buff == None:
+        Buff = readChar()
     
     while len(Buff):
         string += chr(Buff[i])
@@ -21,10 +23,8 @@ def readLine():
             Buff = Buff[i+1:]
             return string
         i += 1
-
-        if i == len(Buff):
-            i = 0
-            Buff = readChar()
         
-    
+    if i == len(Buff):
+        i = 0
+        Buff = readChar()
     return string
