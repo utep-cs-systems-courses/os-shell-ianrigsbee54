@@ -2,10 +2,29 @@ import os, sys, re
 from read import readLine
 
 prompt = '$ '
-def redirect(Input):
-    return False
+Input = ""
 
+def redirect(direction):
+    #check redirect if input or output
+    #return and pass in loop
+    global Input
+    
+    if direction == "in":
+        os.close(0)
+        os.open(Input[Input.index('<')+1], os.O_RDONLY)
+        os.set_inheritable(0, True)
+        Input.remove(Input[Input.index('<')+1])
+        Input.remove('<')
+    if direction == "out":
+        os.close(1)
+        os.open(Input[Input.index('>')+1], os.O_CREAT | os.O_WRONLY)
+        os.set_inheritable(1, True)
+        Input.remove(Input[Input.index('>')+1])
+        Input.remove('>')
+        
+        
 def main():
+    global Input
     
     while True:
         if 'PS1' in os.environ:
@@ -38,9 +57,11 @@ def main():
             sys.exit(1) 
             
         elif rc == 0:
-            #CHANGE REST OF THIS FOR REDIRECT AND PIPE USE
-            if ">" or "<" in Input: #check for redirect
-                redirect(Input)
+            #CHANGE FOR PIPE USE
+            if ">" in Input: #check for redirect
+                redirect("out")
+            if "<" in Input:
+                redirect("in")
            
             for dir in re.split(":", os.environ['PATH']):
                 program = "%s/%s" % (dir, Input[0])
@@ -49,9 +70,8 @@ def main():
                 except FileNotFoundError:
                     pass
                 
-            os.write(2, ("could not execute command %s\n" % input[0]).encode())
+            os.write(2, ("could not execute command %s\n" % Input[0].encode()))
             sys.exit(1) #exit with error
-            
         else:
             childPidCode = os.wait()
             os.write(1, ("Parent: Child %d terminated with exit code %d\n"%childPidCode).encode())
