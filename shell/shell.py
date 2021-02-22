@@ -5,9 +5,19 @@ from read import readLine
 prompt = '$ '
 Input = ""
 
+def execute(inputArg):
+    
+    for dir in re.split(":", os.environ['PATH']):
+        program = "%s/%s" % (dir, inputArg[0])
+        try:
+            os.execve(program, inputArg, os.environ)
+        except FileNotFoundError:
+            pass
+        os.write(2, ("%s : command not found\n" % (inputArg[0])).encode())
+        sys.exit(1)
+
 def redirect(direction):
     #check redirect if input or output
-    #return and pass in loop
     global Input
     
     if direction == "in":
@@ -39,15 +49,24 @@ def pipeInput(Inputarg):
             redirect("in")         
         if '>' in leftArg:
             redirect("out")
-            #FINISH LEFTARG
-            
+        os.close(1)
+        os.dup(pipeWrite)
+        os.set_inheritable(1, True)
+        for fd in (pipeRead, pipeWrite):
+            os.close(fd)
+        execute(leftArg)
+        
     else: #then exec the right arg here
         if '<' in rightArg:
             redirect("in")
         if '>' in rightArg:
             redirect("out")
-            #FINISH RIGHTARG
-        
+        os.close(0)
+        os.dup(pipeRead)
+        os.set_inheritable(0, True)
+        for fd in (pipeRead, pipeWrite):
+            os.close(fd)
+        execute(rightArg)
         
 def main():
     global Input
@@ -58,16 +77,13 @@ def main():
             os.write(1, (os.environ['PS1']).encode())
         else:
             os.write(1,prompt.encode())
-        
+            
         Input = readLine()
-        
-        if '|' in Input: #check for pipe here so we can split in pipe()
+        if '|' in Input: #check for pipe(), split in method, will probably fork in condition
             pipeInput(Input)
             continue
         
         Input = Input.split() #now below we can check the splitted string for certain keywords
-        
-        
         if "exit" in Input:
             os.write(1, ("Exiting shell\n").encode())
             sys.exit(0)
@@ -79,30 +95,27 @@ def main():
                     os.chdir(Input[1])#change to arguement directory
             except:#and if that directory doesnt exist throw an error
                 os.write(2, ("director %s: no such directory" % Input[1]).encode())
-
         
         rc = os.fork()
-        
         if rc < 0:
             os.write(2, ("fork failed\n").encode())
             sys.exit(1) 
             
         elif rc == 0:
-            #CHANGE FOR PIPE USE
+            
             if '>' in Input: #check for redirect
                 redirect("out")
             if '<' in Input:
                 redirect("in")
-           
             for dir in re.split(":", os.environ['PATH']):
                 program = "%s/%s" % (dir, Input[0])
                 try:
-                    os.execve(program, Input, os.environ) #exec command with arguements
-                except FileNotFoundError:
+                    os.execve(program, Input, os.environ)
+                except:
                     pass
-                
             os.write(2, ("could not execute command %s\n" % Input[0].encode()))
-            sys.exit(1) #exit with error
+            sys.exit(1)
+                        
         else:
             childPidCode = os.wait()
             os.write(1, ("Parent: Child %d terminated with exit code %d\n"%childPidCode).encode())
