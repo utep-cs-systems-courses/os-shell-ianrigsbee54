@@ -1,3 +1,5 @@
+#! /user/bin/env python3
+
 import os, sys, re
 from read import readLine
 
@@ -35,15 +37,13 @@ def main():
         Input = readLine()
         Input = Input.split()
         
-        if len(Input) == 0:#if no input 
-            sys.exit(0)
             
         if "exit" in Input:
             os.write(1, ("Exiting shell\n").encode())
             sys.exit(0)
         if "cd" in Input:
             try:
-                if ".." in Input:
+                if len(Input) == 1:
                     os.chdir("..")#go back a directory
                 else:
                     os.chdir(Input[1])#change to arguement directory
