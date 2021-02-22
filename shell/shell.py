@@ -1,4 +1,3 @@
-#! /user/bin/env python3
 
 import os, sys, re
 from read import readLine
@@ -23,21 +22,52 @@ def redirect(direction):
         os.set_inheritable(1, True)
         Input.remove(Input[Input.index('>')+1])
         Input.remove('>')
+
+def pipeInput(Inputarg):
+    global Input
+    Input = Input.split('|')
+    leftArg = Input[0].split()
+    rightArg = Input[1].split()
+    pipeRead, pipeWrite = os.pipe()
+    rc = os.fork()
+
+    if rc < 0:
+        os.write(2, ("fork failed\n").encode())
+        sys.exit(1)
+    elif rc == 0: #we will exec left arg here
+        if '<' in leftArg:
+            redirect("in")         
+        if '>' in leftArg:
+            redirect("out")
+            #FINISH LEFTARG
+            
+    else: #then exec the right arg here
+        if '<' in rightArg:
+            redirect("in")
+        if '>' in rightArg:
+            redirect("out")
+            #FINISH RIGHTARG
         
         
 def main():
     global Input
     
     while True:
+        
         if 'PS1' in os.environ:
             os.write(1, (os.environ['PS1']).encode())
         else:
             os.write(1,prompt.encode())
         
         Input = readLine()
-        Input = Input.split()
         
-            
+        if '|' in Input: #check for pipe here so we can split in pipe()
+            pipeInput(Input)
+            continue
+        
+        Input = Input.split() #now below we can check the splitted string for certain keywords
+        
+        
         if "exit" in Input:
             os.write(1, ("Exiting shell\n").encode())
             sys.exit(0)
@@ -49,7 +79,8 @@ def main():
                     os.chdir(Input[1])#change to arguement directory
             except:#and if that directory doesnt exist throw an error
                 os.write(2, ("director %s: no such directory" % Input[1]).encode())
-                
+
+        
         rc = os.fork()
         
         if rc < 0:
@@ -58,9 +89,9 @@ def main():
             
         elif rc == 0:
             #CHANGE FOR PIPE USE
-            if ">" in Input: #check for redirect
+            if '>' in Input: #check for redirect
                 redirect("out")
-            if "<" in Input:
+            if '<' in Input:
                 redirect("in")
            
             for dir in re.split(":", os.environ['PATH']):
