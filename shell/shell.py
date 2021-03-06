@@ -24,9 +24,9 @@ def execute(inputArg):
             os.write(2, ("%s : command not found\n" % (Input[0])).encode())
             sys.exit(1)
         if '<' in Input: #check for redirects
-            redirect("in", Input)
+            redirect("in")
         elif '>' in Input:
-            redirect("out", Input)
+            redirect("out")
         for dir in re.split(':', os.environ['PATH']):
             program = "%s/%s" % (dir, Input[0])
             try:
@@ -41,9 +41,8 @@ def execute(inputArg):
         os.write(2, ("child finished\n").encode())
         
         
-def redirect(direction, inputArg):
+def redirect(direction):
     global Input
-    Input = inputArg
     #check redirect if input or output
     if direction == "in":
         os.close(0)
@@ -70,10 +69,6 @@ def pipeInput():
         os.write(2, ("fork failed\n").encode())
         sys.exit(1)
     elif rc == 0: #we will exec left arg here
-        if '<' in leftArg:
-            redirect("in", leftArg)         
-        if '>' in leftArg:
-            redirect("out", leftArg)
         os.close(1) #close fd1 for pipeWrite
         os.dup(pipeWrite)#dup pipeWrite
         os.set_inheritable(1, True)#allow child to use
@@ -82,10 +77,7 @@ def pipeInput():
         execute(leftArg)
         sys.exit(0)
     else: #then exec the right arg here
-        if '<' in rightArg:
-            redirect("in", rightArg)
-        if '>' in rightArg:
-            redirect("out", rightArg)
+        os.wait()
         os.close(0)#close 0 of fd which is connected to keyboard
         os.dup(pipeRead)#dup pipeRead
         os.set_inheritable(0, True)
