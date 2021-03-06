@@ -20,8 +20,9 @@ def readLine():
     while len(Buff):
         string += chr(Buff[i])
         if "\n" in string:
-            Buff = Buff[i+1:]#cut string to next character 
+            Buff = Buff[i+1:]
             return string
+        #string += chr(Buff[i])
         i += 1
         
     if i == len(Buff):#if we reach end of Buff we reset
