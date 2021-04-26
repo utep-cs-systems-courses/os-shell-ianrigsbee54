@@ -9,7 +9,7 @@ Input = ""
 def execute(inputArg):
     global Input
     Input = inputArg
-    
+
     rc = os.fork()
     if rc < 0:
         os.write(2, ("fork failed. Try again.").encode())
@@ -83,8 +83,10 @@ def pipeInput():
         os.set_inheritable(0, True)
         for fd in (pipeRead, pipeWrite):
             os.close(fd)#close associated file descriptors
+        if '|' in rightArg:
+            pipe(rightArg)
         execute(rightArg)
-        sys.exit(0)
+        sys.exit(1)
         
 def main():
     global waitChild
@@ -98,13 +100,13 @@ def main():
             
         Input = readLine()
         Input = Input.split()
-        if '|' in Input: #check for pipe(), split in method, will probably fork in condition
+        if '|' in Input: #check for pipe()
             pipeInput()
             continue
         
         if "exit" in Input:
             os.write(1, ("Exiting shell\n").encode())
-            sys.exit(0)
+            sys.exit(1)
         if '&' in Input:
             waitChild = False
         if "cd" in Input:

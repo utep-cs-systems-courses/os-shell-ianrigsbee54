@@ -1,31 +1,27 @@
-import os
+from os import read
 
-Buff = None #we want to remember where we are in Buff if newline in middle
-
-def readChars():
-    global Buff
-    
-    Buff = os.read(0, 500) #read up to 500 bytes
-    
-    return Buff
-
+index = 0
+limit = 0
+def getChar():
+    global index, limit
+    if index == limit:
+        index = 0
+        limit = read(0, 100)
+        if limit == 0:
+            return "EOF"
+    if index < len(limit)-1:
+        c = chr(limit[index])
+        index+=1
+        return c
+    else:
+        return "EOF"
 def readLine():
-    global Buff
-    string = ""#start with empty string
-    i = 0
-    
-    if Buff == None:#read chars by default
-        Buff = readChars()
-    
-    while len(Buff):
-        string += chr(Buff[i])
-        if "\n" in string:
-            Buff = Buff[i+1:]
-            return string
-        #string += chr(Buff[i])
-        i += 1
-        
-    if i == len(Buff):#if we reach end of Buff we reset
-        i = 0
-        Buff = readChars()
-    return string
+    global index, limit
+    line = ""
+    char = getChar()
+    while (char != '' and char != "EOF"):
+        line += char
+        char = getChar()
+    index = 0
+    limit = 0
+    return line
